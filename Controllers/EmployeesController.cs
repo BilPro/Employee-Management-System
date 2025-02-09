@@ -89,6 +89,22 @@ namespace Employee_Management_System.Controllers
             await _context.SaveChangesAsync();
             return NoContent();
         }
-    
-}
+
+        [HttpGet("search")]
+        public async Task<ActionResult<IEnumerable<Employee>>> SearchEmployees(string? name, int? departmentId)
+        {
+            var query = _context.Employees.Include(e => e.Department).AsQueryable();
+            if (!string.IsNullOrEmpty(name))
+            {
+                query = query.Where(e => e.Name.Contains(name));
+            }
+            if (departmentId.HasValue)
+            {
+                query = query.Where(e => e.DepartmentID == departmentId.Value);
+            }
+            return await query.ToListAsync();
+        }
+
+
+    }
 }
