@@ -8,6 +8,8 @@ namespace Employee_Management_System.Model
         public EmployeeContext(DbContextOptions<EmployeeContext> options)
             : base(options)
         {
+            var logger = NLog.LogManager.GetCurrentClassLogger();
+            logger.Info("Application has started.");
         }
 
         public DbSet<Employee> Employees { get; set; }
@@ -15,12 +17,16 @@ namespace Employee_Management_System.Model
         public DbSet<Attendance> AttendanceRecords { get; set; }
         public DbSet<MissingAttendanceRequest> MissingAttendanceRequests { get; set; }
 
+        public DbSet<LogEntry> LogEntries { get; set; }
+
+
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             modelBuilder.Entity<Employee>().ToTable("Employees");
             modelBuilder.Entity<Department>().ToTable("Departments");
             modelBuilder.Entity<Attendance>().ToTable("Attendance");
             modelBuilder.Entity<MissingAttendanceRequest>().ToTable("MissingAttendanceRequests");
+            modelBuilder.Entity<LogEntry>().ToTable("LogEntry");
 
             modelBuilder.Entity<MissingAttendanceRequest>()
                 .HasKey(m => m.RequestID);  // Ensure primary key is set

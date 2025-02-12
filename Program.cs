@@ -1,12 +1,17 @@
 using Employee_Management_System.Model;
+using Employee_Management_System.Repositories;
+using Employee_Management_System.Services;
 using Employee_Management_System.Utilities;
 using Microsoft.EntityFrameworkCore;
+using NLog.Web;
 
 
 internal class Program
 {
     private static void Main(string[] args)
     {
+       
+
         var builder = WebApplication.CreateBuilder(args);
 
         // Add CORS service
@@ -20,7 +25,14 @@ internal class Program
             });
         });
 
+        builder.Logging.ClearProviders();
+        builder.Host.UseNLog();
+        NLog.Common.InternalLogger.LogLevel = NLog.LogLevel.Debug;
+        NLog.Common.InternalLogger.LogToConsole = true;
 
+        // Register repository and service
+        builder.Services.AddScoped<IEmployeeRepository, EmployeeRepository>();
+        builder.Services.AddScoped<IEmployeeService, EmployeeService>();
 
         // Add services to the container.
 
@@ -41,6 +53,8 @@ internal class Program
         {
             connectionString = encryptedConnStr; // Fall back if not encrypted.
         }
+
+       
 
 
         // Register the DbContext with SQL Server using a connection string from appsettings.json.
@@ -63,6 +77,11 @@ internal class Program
             //app.UseSwaggerUI();
             app.UseDeveloperExceptionPage();
         }
+
+        var lifetime = app.Services.GetRequiredService<IHostApplicationLifetime>();
+        lifetime.ApplicationStopped.Register(() => {
+            NLog.LogManager.Shutdown();
+        });
 
         app.UseHttpsRedirection();
 

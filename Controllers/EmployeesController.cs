@@ -1,4 +1,5 @@
 ﻿using Employee_Management_System.Model;
+using Employee_Management_System.Services;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
@@ -8,103 +9,60 @@ namespace Employee_Management_System.Controllers
     [Route("api/[controller]")]
     public class EmployeesController : ControllerBase
     {
-        private readonly EmployeeContext _context;
+        private readonly IEmployeeService _employeeService;
 
-        public EmployeesController(EmployeeContext context)
+        public EmployeesController(IEmployeeService employeeService)
         {
-            _context = context;
+            _employeeService = employeeService;
         }
 
         [HttpGet]
         public async Task<ActionResult<IEnumerable<Employee>>> GetEmployees()
         {
-            return await _context.Employees.ToListAsync();
+            var employees = await _employeeService.GetEmployeesAsync();
+            return Ok(employees);
         }
 
         [HttpGet("{id}")]
         public async Task<ActionResult<Employee>> GetEmployee(int id)
         {
-            var employee = await _context.Employees.FindAsync(id);
+            var employee = await _employeeService.GetEmployeeAsync(id);
             if (employee == null)
-            {
                 return NotFound();
-            }
-            return employee;
+            return Ok(employee);
         }
 
         [HttpPost]
         public async Task<ActionResult<Employee>> CreateEmployee(Employee employee)
         {
-            _context.Employees.Add(employee);
-            await _context.SaveChangesAsync();
-            return CreatedAtAction(nameof(GetEmployee), new { id = employee.EmployeeID }, employee);
+            var result = await _employeeService.CreateEmployeeAsync(employee);
+            if (result)
+                return CreatedAtAction(nameof(GetEmployee), new { id = employee.EmployeeID }, employee);
+            else
+                return StatusCode(500, "Error creating employee.");
         }
 
         [HttpPut("{id}")]
-        public async Task<IActionResult> UpdateEmployee(int id, [FromBody] Employee employee)
+        public async Task<IActionResult> UpdateEmployee(int id, Employee employee)
         {
-            if (employee == null || id != employee.EmployeeID)
-            {
-                return BadRequest("Invalid request. Employee ID mismatch.");
-            }
+            if (id != employee.EmployeeID)
+                return BadRequest("Employee ID mismatch.");
 
-            // Fetch the existing employee from the database
-            var existingEmployee = await _context.Employees.FindAsync(id);
-
-            if (existingEmployee == null)
-            {
-                return NotFound("Employee not found.");
-            }
-
-            // Update properties manually
-            existingEmployee.Name = employee.Name;
-            existingEmployee.Email = employee.Email;
-            existingEmployee.Phone = employee.Phone;
-            existingEmployee.DepartmentID = employee.DepartmentID;
-            existingEmployee.HireDate = employee.HireDate;
-
-            try
-            {
-                await _context.SaveChangesAsync();
-                return Ok(existingEmployee); // Return updated data
-            }
-            catch (DbUpdateException ex)
-            {
-                return StatusCode(500, $"Internal server error: {ex.Message}");
-            }
+            var result = await _employeeService.UpdateEmployeeAsync(employee);
+            if (result)
+                return NoContent();
+            else
+                return StatusCode(500, "Error updating employee.");
         }
-
-
 
         [HttpDelete("{id}")]
         public async Task<IActionResult> DeleteEmployee(int id)
         {
-            var employee = await _context.Employees.FindAsync(id);
-            if (employee == null)
-            {
-                return NotFound();
-            }
-
-            _context.Employees.Remove(employee);
-            await _context.SaveChangesAsync();
-            return NoContent();
+            var result = await _employeeService.DeleteEmployeeAsync(id);
+            if (result)
+                return NoContent();
+            else
+                return StatusCode(500, "Error deleting employee.");
         }
-
-        [HttpGet("search")]
-        public async Task<ActionResult<IEnumerable<Employee>>> SearchEmployees(string? name, int? departmentId)
-        {
-            var query = _context.Employees.Include(e => e.Department).AsQueryable();
-            if (!string.IsNullOrEmpty(name))
-            {
-                query = query.Where(e => e.Name.Contains(name));
-            }
-            if (departmentId.HasValue)
-            {
-                query = query.Where(e => e.DepartmentID == departmentId.Value);
-            }
-            return await query.ToListAsync();
-        }
-
-
     }
 }
