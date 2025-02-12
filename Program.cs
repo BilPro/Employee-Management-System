@@ -1,4 +1,5 @@
 using Employee_Management_System.Model;
+using Employee_Management_System.Utilities;
 using Microsoft.EntityFrameworkCore;
 
 
@@ -8,6 +9,19 @@ internal class Program
     {
         var builder = WebApplication.CreateBuilder(args);
 
+        // Add CORS service
+        builder.Services.AddCors(options =>
+        {
+            options.AddPolicy("AllowBlazorClient", policy =>
+            {
+                policy.WithOrigins("https://localhost:7042") // Your Blazor UI origin
+                      .AllowAnyMethod()
+                      .AllowAnyHeader();
+            });
+        });
+
+
+
         // Add services to the container.
 
         builder.Services.AddControllers();
@@ -15,11 +29,32 @@ internal class Program
         builder.Services.AddEndpointsApiExplorer();
         builder.Services.AddSwaggerGen();
 
+        string encryptedConnStr = builder.Configuration.GetConnectionString("DefaultConnection");
+        string encryptionKey = builder.Configuration["Encryption:Key"];
+        string connectionString;
+
+        if (!string.IsNullOrEmpty(encryptedConnStr))
+        {
+            connectionString = EncryptionHelper.DecryptString(encryptedConnStr, encryptionKey);
+        }
+        else
+        {
+            connectionString = encryptedConnStr; // Fall back if not encrypted.
+        }
+
+
         // Register the DbContext with SQL Server using a connection string from appsettings.json.
         builder.Services.AddDbContext<EmployeeContext>(options =>
-            options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
+            options.UseSqlServer(connectionString));
+
+        //var connStr = builder.Configuration.GetConnectionString("DefaultConnection");
+        //Console.WriteLine("Key");
+        //Console.WriteLine(EncryptionHelper.EncryptString(connStr, encryptionKey));
+        //qsuFFNsUr137zQgvvlxeFTNjRrqRu7YC7+/iWr3cmLqI6i47TH8NZOMLKYfqne0LsrYLdryqsCGUXcms9VpZQyrKvuoggrT6sQ9mg3hHRQ7Gk8QSIl1wKJnW5F/hpgmYHXcCzNICQkRrNSkVVXYS5A==
 
         var app = builder.Build();
+        // Use CORS middleware before routing
+        app.UseCors("AllowBlazorClient");
 
         // Configure the HTTP request pipeline.
         if (app.Environment.IsDevelopment())

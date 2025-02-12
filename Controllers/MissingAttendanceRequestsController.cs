@@ -54,7 +54,7 @@ namespace Employee_Management_System.Controllers
 
             // Update status and the ApprovedBy field (if applicable)
             request.Status = update.Status; // Expected values: "Approved" or "Rejected"
-            request.ApprovedBy = update.ApprovedBy;
+            request.ApprovedBy = update.ApprovedBy.ToString();
 
             _context.Entry(request).State = EntityState.Modified;
             await _context.SaveChangesAsync();
