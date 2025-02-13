@@ -1,10 +1,12 @@
 ﻿using Employee_Management_System.Model;
 using Employee_Management_System.Services;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
 namespace Employee_Management_System.Controllers
 {
+    [Authorize]
     [ApiController]
     [Route("api/[controller]")]
     public class EmployeesController : ControllerBase
@@ -42,6 +44,7 @@ namespace Employee_Management_System.Controllers
                 return StatusCode(500, "Error creating employee.");
         }
 
+        [Authorize(Roles = "Admin")]
         [HttpPut("{id}")]
         public async Task<IActionResult> UpdateEmployee(int id, Employee employee)
         {

@@ -1,8 +1,10 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore;
 
 namespace Employee_Management_System.Model
 {
-    public class EmployeeContext : DbContext
+    public class EmployeeContext : IdentityDbContext<IdentityUser, IdentityRole, string>
     {
 
         public EmployeeContext(DbContextOptions<EmployeeContext> options)
