@@ -43,6 +43,10 @@ internal class Program
         builder.Services.AddScoped<IMissingAttendanceRequestRepository, MissingAttendanceRequestRepository>();
         builder.Services.AddScoped<IMissingAttendanceRequestService, MissingAttendanceRequestService>();
 
+        // Register Department repository and service
+        builder.Services.AddScoped<IDepartmentRepository, DepartmentRepository>();
+        builder.Services.AddScoped<IDepartmentService, DepartmentService>();
+
         // Add services to the container.
 
         builder.Services.AddControllers();

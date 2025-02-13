@@ -1,4 +1,5 @@
 ﻿using Employee_Management_System.Model;
+using Employee_Management_System.Services;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
@@ -8,34 +9,44 @@ namespace Employee_Management_System.Controllers
     [Route("api/[controller]")]
     public class DepartmentsController : ControllerBase
     {
-        private readonly EmployeeContext _context;
-        public DepartmentsController(EmployeeContext context)
+        private readonly IDepartmentService _departmentService;
+
+        public DepartmentsController(IDepartmentService departmentService)
         {
-            _context = context;
+            _departmentService = departmentService;
         }
 
         // GET: api/departments
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<Department>>> GetDepartments() =>
-             await _context.Departments.ToListAsync();
+        public async Task<ActionResult<IEnumerable<Department>>> GetDepartments()
+        {
+            var departments = await _departmentService.GetDepartmentsAsync();
+            return Ok(departments);
+        }
 
         // GET: api/departments/{id}
         [HttpGet("{id}")]
         public async Task<ActionResult<Department>> GetDepartment(int id)
         {
-            var department = await _context.Departments.FindAsync(id);
+            var department = await _departmentService.GetDepartmentAsync(id);
             if (department == null)
                 return NotFound();
-            return department;
+            return Ok(department);
         }
 
         // POST: api/departments
         [HttpPost]
         public async Task<ActionResult<Department>> CreateDepartment(Department department)
         {
-            _context.Departments.Add(department);
-            await _context.SaveChangesAsync();
-            return CreatedAtAction(nameof(GetDepartment), new { id = department.DepartmentID }, department);
+            var result = await _departmentService.CreateDepartmentAsync(department);
+            if (result)
+            {
+                return CreatedAtAction(nameof(GetDepartment), new { id = department.DepartmentID }, department);
+            }
+            else
+            {
+                return StatusCode(500, "Error creating department.");
+            }
         }
 
         // PUT: api/departments/{id}
@@ -45,31 +56,22 @@ namespace Employee_Management_System.Controllers
             if (id != department.DepartmentID)
                 return BadRequest("Department ID mismatch.");
 
-            _context.Entry(department).State = EntityState.Modified;
-            try
-            {
-                await _context.SaveChangesAsync();
-            }
-            catch (DbUpdateConcurrencyException)
-            {
-                if (!_context.Departments.Any(d => d.DepartmentID == id))
-                    return NotFound();
-                else
-                    throw;
-            }
-            return NoContent();
+            var result = await _departmentService.UpdateDepartmentAsync(department);
+            if (result)
+                return NoContent();
+            else
+                return StatusCode(500, "Error updating department.");
         }
 
         // DELETE: api/departments/{id}
         [HttpDelete("{id}")]
         public async Task<IActionResult> DeleteDepartment(int id)
         {
-            var department = await _context.Departments.FindAsync(id);
-            if (department == null)
-                return NotFound();
-            _context.Departments.Remove(department);
-            await _context.SaveChangesAsync();
-            return NoContent();
+            var result = await _departmentService.DeleteDepartmentAsync(id);
+            if (result)
+                return NoContent();
+            else
+                return StatusCode(500, "Error deleting department.");
         }
     }
 }
