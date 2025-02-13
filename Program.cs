@@ -1,6 +1,7 @@
 using Employee_Management_System.Model;
 using Employee_Management_System.Repositories;
 using Employee_Management_System.Services;
+using Employee_Management_System.Services.EmployeeManagementAPI.Repositories;
 using Employee_Management_System.Utilities;
 using Microsoft.EntityFrameworkCore;
 using NLog.Web;
@@ -33,6 +34,10 @@ internal class Program
         // Register repository and service
         builder.Services.AddScoped<IEmployeeRepository, EmployeeRepository>();
         builder.Services.AddScoped<IEmployeeService, EmployeeService>();
+
+        // Register the Attendance repository and service
+        builder.Services.AddScoped<IAttendanceRepository, AttendanceRepository>();
+        builder.Services.AddScoped<IAttendanceService, AttendanceService>();
 
         // Add services to the container.
 
