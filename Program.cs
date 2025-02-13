@@ -39,12 +39,18 @@ internal class Program
         builder.Services.AddScoped<IAttendanceRepository, AttendanceRepository>();
         builder.Services.AddScoped<IAttendanceService, AttendanceService>();
 
+        // Register repository and service for Missing Attendance Requests
+        builder.Services.AddScoped<IMissingAttendanceRequestRepository, MissingAttendanceRequestRepository>();
+        builder.Services.AddScoped<IMissingAttendanceRequestService, MissingAttendanceRequestService>();
+
         // Add services to the container.
 
         builder.Services.AddControllers();
         // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
         builder.Services.AddEndpointsApiExplorer();
         builder.Services.AddSwaggerGen();
+
+
 
         string encryptedConnStr = builder.Configuration.GetConnectionString("DefaultConnection");
         string encryptionKey = builder.Configuration["Encryption:Key"];

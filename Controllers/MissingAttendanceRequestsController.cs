@@ -1,4 +1,5 @@
 ﻿using Employee_Management_System.Model;
+using Employee_Management_System.Services;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
@@ -8,21 +9,22 @@ namespace Employee_Management_System.Controllers
     [Route("api/[controller]")]
     public class MissingAttendanceRequestsController : ControllerBase
     {
-        private readonly EmployeeContext _context;
-        public MissingAttendanceRequestsController(EmployeeContext context)
+        private readonly IMissingAttendanceRequestService _service;
+
+        public MissingAttendanceRequestsController(IMissingAttendanceRequestService service)
         {
-            _context = context;
+            _service = service;
         }
 
         // POST: api/missingattendancerequests/mark - Mark missing attendance (submit a request)
         [HttpPost("mark")]
         public async Task<ActionResult<MissingAttendanceRequest>> MarkMissingAttendance(MissingAttendanceRequest request)
         {
-            if (!await _context.Employees.AnyAsync(e => e.EmployeeID == request.EmployeeID))
-                return BadRequest("Employee not found.");
+            // Optionally validate that the employee exists in a separate service or repository.
+            var result = await _service.MarkMissingAttendanceAsync(request);
+            if (!result)
+                return BadRequest("Error marking missing attendance or employee not found.");
 
-            _context.MissingAttendanceRequests.Add(request);
-            await _context.SaveChangesAsync();
             return CreatedAtAction(nameof(GetMissingAttendanceRequest), new { id = request.RequestID }, request);
         }
 
@@ -30,16 +32,19 @@ namespace Employee_Management_System.Controllers
         [HttpGet("{id}")]
         public async Task<ActionResult<MissingAttendanceRequest>> GetMissingAttendanceRequest(int id)
         {
-            var request = await _context.MissingAttendanceRequests.FindAsync(id);
+            var request = await _service.GetRequestByIdAsync(id);
             if (request == null)
                 return NotFound();
-            return request;
+            return Ok(request);
         }
 
         // GET: api/missingattendancerequests - List all missing attendance requests
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<MissingAttendanceRequest>>> GetMissingAttendanceRequests() =>
-            await _context.MissingAttendanceRequests.ToListAsync();
+        public async Task<ActionResult<IEnumerable<MissingAttendanceRequest>>> GetMissingAttendanceRequests()
+        {
+            var requests = await _service.GetAllRequestsAsync();
+            return Ok(requests);
+        }
 
         // PUT: api/missingattendancerequests/{id} - Approve or reject a missing attendance request
         [HttpPut("{id}")]
@@ -48,16 +53,9 @@ namespace Employee_Management_System.Controllers
             if (id != update.RequestID)
                 return BadRequest("Request ID mismatch.");
 
-            var request = await _context.MissingAttendanceRequests.FindAsync(id);
-            if (request == null)
-                return NotFound("Missing attendance request not found.");
-
-            // Update status and the ApprovedBy field (if applicable)
-            request.Status = update.Status; // Expected values: "Approved" or "Rejected"
-            request.ApprovedBy = update.ApprovedBy.ToString();
-
-            _context.Entry(request).State = EntityState.Modified;
-            await _context.SaveChangesAsync();
+            var result = await _service.UpdateRequestStatusAsync(id, update);
+            if (!result)
+                return NotFound("Missing attendance request not found or error updating.");
             return NoContent();
         }
     }
